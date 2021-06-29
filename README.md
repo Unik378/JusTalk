@@ -25,4 +25,9 @@ npm run dev
 
 ### Some Screenshots
 
+Logging in with email password and creating room
 <img src = "screenshots/1.gif">
+
+
+Logging in with Google and joining a room
+<img src = "screenshots/2.gif">

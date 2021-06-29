@@ -25,3 +25,4 @@ npm run dev
 
 ### Some Screenshots
 
+<img src = "screenshots/1.gif">

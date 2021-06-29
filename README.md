@@ -31,3 +31,6 @@ Logging in with email password and creating room
 
 Logging in with Google and joining a room
 <img src = "screenshots/2.gif">
+
+Chatting
+<img src = "screenshots/3.gif">

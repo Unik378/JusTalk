@@ -83,7 +83,7 @@
                                         <a href="#" class="list-group-item list-group-item-action list-group-item-light rounded-0">
                                             <div class="media">
                                                 <div class="img-cropper-small">
-                                                    <img src="/icon-avatar.png" alt="user">
+                                                    <img src="/roomProfilePics/<%= room.id %>" alt="user">
                                                 </div>
                                                 <div class="media-body ml-4">
                                                     <div class="d-flex align-items-center justify-content-between mb-1">
@@ -99,7 +99,7 @@
                                         <a href="#" class="list-group-item list-group-item-action list-group-item-light rounded-0">
                                             <div class="media">
                                                 <div class="img-cropper-small">
-                                                    <img src="/icon-avatar.png" alt="user">
+                                                    <img src="/roomProfilePics/<%= room.id %>" alt="user">
                                                 </div>
                                                 <div class="media-body ml-4">
                                                     <div class="d-flex align-items-center justify-content-between mb-1">
@@ -121,14 +121,14 @@
         <div style="padding-left: 4px;padding-right: 0px;" id="chatarea" class="col-7">
 
             <div id="topBarChatBox" class="bg-gray px-4 py-2 bg-light" style="display: none;">
-                <button style="width: 100%;border: none;background: #f8f9fa !important;" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
+                <button style="width: 100%;border: none;background: #f8f9fa !important;" type="button" onclick="cancelRoomEdit()" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
                     <div style="display: flex;" id="roomNameContainer">
                         <div class="img-cropper-small">
-                            <img src="/icon-avatar.png" alt="">
+                            <img src="" alt="">
                         </div>
                         <div style="margin-left: 15px;">
                             <div style="text-align: left;" id="roomName" class="h5 mb-0" ></div>
-                            <small><span></span> members | <span></span> online</small>
+                            <small><span></span> member | <span></span> online</small>
                         </div>
                     </div>
                 </button>
@@ -184,15 +184,59 @@
   
 <div class="offcanvas offcanvas-end" data-bs-scroll="false" data-bs-backdrop="true" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
     <div class="offcanvas-header">
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <h5 class="offcanvas-title" id="offcanvasExampleLabel">Room Info</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" onclick="cancelRoomEdit()"></button>
     </div>
-    <div style="display: flex; flex-direction: column; align-items: center;" id="roomDescription" class="offcanvas-body">
+    <div id="roomDescription" class="offcanvas-body">
         <div>
-            <img style="height: 150px; width: 150px;" src="/icon-avatar.png" alt="user" width="50" class="rounded-circle">
+            <form id="roomProfilePicForm" action="/users/updateRoomProfilePic" method="POST" enctype="multipart/form-data">
+                <input type="text" name="id" class="form-control" value="" hidden/>
+                <div style="display: flex;flex-direction: column; align-items: center;" class="form-group mb-0">
+                    <div class="img-cropper-big">
+                        <img id="outputRoom" src="" alt="">
+                        <h5 style="text-align: center;display: none;">Click to select photo</h5>
+                    </div>
+                    <label class="mb-0" for="roomProfilePic">
+                        <div id="editRoomPic">
+                            <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                            Edit
+                        </div>
+                    </label>
+                    <input type="file" id="roomProfilePic" name="roomProfilePic" class="form-control" accept="image/*" onchange="loadRoomFile(event)" hidden/>
+                </div>
+                <button id="saveRoomPic" style="display: none;margin: auto;" type="submit" class="btn">
+                    <img style="width: 40px;" src="/check.png" alt="">
+                </button>
+            </form>
         </div>
+
         <div>
-            <p><h5></h5></p>
+            <form id="roomNameForm" action="/users/updateRoomName" method="POST">
+                <input type="text" name="id" class="form-control" value="" hidden/>
+                <div class="form-group">
+                    <label style="color: rgb(0, 150, 0);" for="roomProfileName">
+                        Room Name
+                    </label>
+                    <div style="display: flex;align-items: center;">
+                        <input type="text" id="roomProfileName" name="roomProfileName" class="form-control" data-realname="" value="" onfocus="this.selectionStart = this.selectionEnd = this.value.length;" disabled/>
+                        <button id="saveRoomName" style="display: none;margin: auto;" type="submit" class="btn">
+                            <img style="width: 25px;" src="/check.png" alt="">
+                        </button>
+                        <button id="editRoomName" type="button" class="btn" onclick="editRoomProfileName()">
+                            <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
+
+        <div class="form-group">
+            <label style="color: rgb(0, 150, 0);" for="roomId">
+                Room Id
+            </label>
+                <input type="text" id="roomId" name="roomId" class="form-control" value="" disabled/>
+        </div>
+
         <button id="leaveroom">
             <i class="fa fa-sign-out fa-2x" aria-hidden="true" style="margin-right: 15px;"></i>
             <span>Leave Room</span>
@@ -205,6 +249,7 @@
         <ul id="myUL" class="list-group list-group-flush">
         </ul>
         </div>
+
     </div>
 </div>
 
@@ -258,11 +303,11 @@
             <label style="color: rgb(0, 150, 0);" for="profileEmail">
                 Your Email
             </label>
-                <input type="email" id="profileEmail" name="profileEmail" class="form-control" value="<%= user.email %>" disabled/>
-            </div>
+            <input type="email" id="profileEmail" name="profileEmail" class="form-control" value="<%= user.email %>" disabled/>
         </div>
     </div>
 </div>
+
 
 <% var roomInfo = []%>
 <% rooms.forEach( room => { %>
@@ -307,7 +352,6 @@
         document.getElementById('editPic').style.display = 'block'
         document.getElementById('saveName').style.display = 'none';
         document.getElementById('editName').style.display = 'block'
-        editClicked = 0;
     }
 
     var loadFile = function(event) {
@@ -323,6 +367,40 @@
         document.getElementById('savePic').style.display = 'block';
     };
   
+    function editRoomProfileName()
+    {
+        document.getElementById('roomProfileName').disabled = false;
+        document.getElementById('editRoomName').style.display = 'none';
+        document.getElementById('saveRoomName').style.display = 'block';
+        document.getElementById('roomProfileName').focus();
+    }
+
+    function cancelRoomEdit()
+    {
+        document.getElementById('outputRoom').src = `/roomProfilePics/${currentRoom}`;
+        elem = document.getElementById('roomProfileName')
+        elem.value = elem.dataset.realname;
+
+        document.getElementById('roomProfileName').disabled = true;
+
+        document.getElementById('saveRoomPic').style.display = 'none';
+        document.getElementById('editRoomPic').style.display = 'block'
+        document.getElementById('saveRoomName').style.display = 'none';
+        document.getElementById('editRoomName').style.display = 'block'
+    }
+
+    var loadRoomFile = function(event) {
+        isLoaded = 1;
+        var reader = new FileReader();
+        reader.onload = function(){
+            var output = document.getElementById('outputRoom');
+            output.src = reader.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+
+        document.getElementById('editRoomPic').style.display = 'none';
+        document.getElementById('saveRoomPic').style.display = 'block';
+    };
 </script>
 
 <script>
@@ -407,7 +485,7 @@ function shortenMessage(str){
         const elem = document.getElementById(data.userId);
         if( elem )
         {
-            elem.getElementsByTagName('i')[0].style.color = 'green';
+            elem.getElementsByTagName('i')[0].style.color = '#22ff22';
         }
 
         if(currentRoom != null)
@@ -466,7 +544,7 @@ function shortenMessage(str){
                                                             <div class="img-cropper-small">
                                                                 <img src="/profilePics/${data.userId}" alt="user">
                                                             </div>
-                                                            <i style="position: absolute;left: 52px;top: 43px;color: green;"class="fa fa-circle" aria-hidden="true"></i>
+                                                            <i style="position: absolute;left: 52px;top: 43px;color: #22ff22;"class="fa fa-circle" aria-hidden="true"></i>
                                                             ${data.userName}
                                                             </li>`;
 
@@ -614,10 +692,10 @@ function shortenMessage(str){
             currentRoom = room.id;
             console.log(currentRoom)
             topBarChatBox.style.display = 'flex';
+            topBarChatBox.getElementsByTagName('img')[0].src = `/roomProfilePics/${room.id}`;
             typingArea.style.display = 'block';
             startMessage.style.display = 'none';
             roomDescription = document.getElementById('roomDescription');
-            
 
             user.rooms.forEach(room1 => {
                 document.getElementById(room1.id+'ChatBox').style.display = 'none'
@@ -638,7 +716,12 @@ function shortenMessage(str){
 
             document.getElementById(room.id).getElementsByTagName('p')[0].classList.remove('text-muted');
 
-            roomDescription.getElementsByTagName('h5')[0].innerText = room.name;
+            roomDescription.getElementsByTagName('img')[0].src = `/roomProfilePics/${room.id}`;
+            document.getElementById('roomNameForm').getElementsByTagName('input')[1].value = room.name;
+            document.getElementById('roomNameForm').getElementsByTagName('input')[1].dataset.realname = room.name;
+            document.getElementById('roomId').value = room.id;
+            document.getElementById('roomNameForm').getElementsByTagName('input')[0].value = room.id;
+            document.getElementById('roomProfilePicForm').getElementsByTagName('input')[0].value = room.id;
             myUL = document.getElementById('myUL');
             myUL.innerHTML = '';
 
@@ -652,7 +735,7 @@ function shortenMessage(str){
                                         <div class="img-cropper-small">
                                             <img src="/profilePics/${member}" alt="user">
                                         </div>
-                                        <i style="position: absolute;left: 52px;top: 43px;color: green;"class="fa fa-circle" aria-hidden="true"></i>
+                                        <i style="position: absolute;left: 52px;top: 43px;color: #22ff22;"class="fa fa-circle" aria-hidden="true"></i>
                                         ${user.userInfo[member].name}
                                     </li>`;
                 }

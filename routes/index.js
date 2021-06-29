@@ -6,7 +6,6 @@ const util = require('util')
 
 const router = express.Router();
 const { ensureAuthenticated, forwardAuthenticated } = require('../config/auth');
-const { userInfo } = require('os');
 
 // Welcome Page
 router.get('/', forwardAuthenticated, (req, res) => res.render('welcome'));
@@ -35,8 +34,6 @@ router.get('/dashboard', ensureAuthenticated, (req, res) =>{
 
       User.find({'_id':{$in:[...userlist]}} , (err,users) => {
         if(err) throw err;
-
-        console.log(users);
 
         users.forEach(user => {
           usersInfo[user.id] = { name:user.name, email:user.email};

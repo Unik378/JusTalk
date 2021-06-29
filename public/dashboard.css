@@ -9,7 +9,7 @@ body {
   background-color: #74EBD5;
   background-image: linear-gradient(90deg, #74EBD5 0%, #9FACE6 100%);
 
-  min-height: 100vh;
+  max-height: 100vh;
 }
 
 ::-webkit-scrollbar {
@@ -40,6 +40,11 @@ body {
 
 .rounded-lg {
   border-radius: 0.5rem;
+}
+
+.h5,h5{
+  font-size: 1.15rem;
+  font-weight: normal;
 }
 
 input::placeholder {

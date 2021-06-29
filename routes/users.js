@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const http = require('https');
 
-var storage = multer.diskStorage({
+var storageProfilePic = multer.diskStorage({
   destination: (req,file,cb) => {
       fileDest = path.join(__dirname,'..','profilePics');
       cb(null,fileDest);
@@ -25,7 +25,7 @@ var storage = multer.diskStorage({
 })
 
 var profileUpload = multer({
-  storage: storage,
+  storage: storageProfilePic
   // fileFilter: (req, file, cb) => {
   //   if (file.mimetype == "image/*") {
   //     cb(null, true);
@@ -34,6 +34,27 @@ var profileUpload = multer({
   //     return cb(new Error('Only images are allowed!'));
   //   }
   // }
+});
+
+var storageRoomPic = multer.diskStorage({
+  destination: (req,file,cb) => {
+      fileDest = path.join(__dirname,'..','roomProfilePics');
+      cb(null,fileDest);
+  },
+  filename: (req,file,cb) => {
+      fileName = req.body.id;
+      filePath = path.join(__dirname,'..','profilePics',fileName);
+
+      if(fs.existsSync(filePath))
+      {
+          fs.unlinkSync(filePath);
+      }
+      cb(null,fileName);
+  }
+})
+
+var uploadRoomPic = multer({
+  storage: storageRoomPic
 });
 
 const download = (url, dest, cb) => {
@@ -64,6 +85,7 @@ const download = (url, dest, cb) => {
 
 // Load User model
 const User = require('../models/User');
+const Room = require('../models/Rooms');
 const { forwardAuthenticated, ensureAuthenticated } = require('../config/auth');
 
 // Login Page
@@ -161,10 +183,29 @@ router.post('/updateProfilePic' , ensureAuthenticated, profileUpload.single('pro
       });
 });
 
+// Room Profile Pic Upload
+router.post('/updateRoomProfilePic' , ensureAuthenticated, uploadRoomPic.single('roomProfilePic'), (req,res) => {
+  res.redirect('/dashboard');
+});
+
 // Profile Name Update
 router.post('/updateProfileName' , (req,res) => {
   User.updateOne({ _id: req.user.id },
     { $set: {name: req.body.profileName}}, function (err, docs) {
+      if (err) {
+        console.log(err)
+      }
+      else {
+        res.redirect('/dashboard');
+      }
+    });
+})
+
+// Room Name Update
+router.post('/updateRoomName' , (req,res) => {
+  console.log('Body: ',req.body);
+  Room.updateOne({ _id: req.body.id },
+    { $set: {name: req.body.roomProfileName}}, function (err, docs) {
       if (err) {
         console.log(err)
       }

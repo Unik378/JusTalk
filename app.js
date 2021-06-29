@@ -102,13 +102,14 @@ app.use('/roomProfilePics/:id' , ensureAuthenticated, (req,res,next) => {
     }
     else
     {
-      res.sendFile(path.join(__dirname,'roomProfilePics','default.png'));
+      res.sendFile(path.join(__dirname,'roomProfilePics','icon-avatar.png'));
     }
   }
   else
   {
+    console.log('hello');
     res.status(401);
-    res.send(`<h1>Not authorised to access this resource</h1>`);
+    res.end();
   }
 
 })

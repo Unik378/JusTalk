@@ -6,6 +6,7 @@ const util = require('util')
 
 const router = express.Router();
 const { ensureAuthenticated, forwardAuthenticated } = require('../config/auth');
+const { userInfo } = require('os');
 
 // Welcome Page
 router.get('/', forwardAuthenticated, (req, res) => res.render('welcome'));
@@ -13,7 +14,7 @@ router.get('/', forwardAuthenticated, (req, res) => res.render('welcome'));
 // Dashboard
 router.get('/dashboard', ensureAuthenticated, (req, res) =>{
 
-  Room.find({users: {$elemMatch: {userId:req.user.id}}} , (err, docs) => {
+  Room.find({users: req.user.id} , (err, docs) => {
     if(err)
     {
       console.log(err)
@@ -23,10 +24,31 @@ router.get('/dashboard', ensureAuthenticated, (req, res) =>{
         return new Date(b.messages[b.messages.length-1].Date) - new Date(a.messages[a.messages.length-1].Date);
       })
 
-      res.render('dashboard', {
-        user: req.user,
-        rooms: docs
+      usersInfo = {};
+      userlist = new Set();
+
+      docs.forEach(room => {
+        room.users.forEach(user => {
+          userlist.add(user);
+        })
       })
+
+      User.find({'_id':{$in:[...userlist]}} , (err,users) => {
+        if(err) throw err;
+
+        console.log(users);
+
+        users.forEach(user => {
+          usersInfo[user.id] = { name:user.name, email:user.email};
+        })
+
+        res.render('dashboard', {
+          user: req.user,
+          rooms: docs,
+          userInfo:usersInfo
+        })
+      })
+
     }
   })
 });
@@ -65,63 +87,50 @@ router.post('/createroom', ensureAuthenticated, (req, res) => {
       password,
       password2
     });
-  } else {
-    Room.findOne({ name: name }).then(room => {
-      if (room) {
-        errors.push({ msg: 'Room already exists' });
-        res.render('createroom', {
-          errors,
-          name,
-          password,
-          password2
-        });
-      } else {
-        const newRoom = new Room({
-          name: name,
-          password: password,
-          users: [{userId:req.user.id,name:req.user.name}],
-          messages: [{
-            msg: `${req.user.name} created room "${name}"`,
-            userSent: {userId: 'bot', name: 'bot'},
-            Date : new Date()
-          }],
-          createdBy: req.user.id
-        });
+  } else 
+  {
+    const newRoom = new Room({
+                              name: name,
+                              password: password,
+                              users: [req.user.id],
+                              messages: [{
+                                msg: `${req.user.name} created room "${name}"`,
+                                userSent: 'bot',
+                                Date : new Date()
+                              }],
+                              createdBy: req.user.id });
 
-        bcrypt.genSalt(10, (err, salt) => {
-          bcrypt.hash(newRoom.password, salt, (err, hash) => {
-            if (err) throw err;
-            newRoom.password = hash;
-            newRoom
-              .save()
-              .then(room => {
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(newRoom.password, salt, (err, hash) => {
+        if (err) throw err;
+        newRoom.password = hash;
+        newRoom
+          .save()
+          .then(room => {
 
-                User.updateOne({ _id: req.user.id },
-                  { $push: { rooms: name } }, function (err, docs) {
-                    if (err) {
-                      console.log(err)
-                    }
-                    else {
-                      console.log("Room added");
-                      res.redirect('/dashboard');
-                    }
-                  });
-              })
-              .catch(err => console.log(err));
-          });
-        });
-      }
+            User.updateOne({ _id: req.user.id },
+              { $push: { rooms: newRoom.id } }, function (err, docs) {
+                if (err) {
+                  console.log(err)
+                }
+                else {
+                  console.log("Room added");
+                  res.redirect('/dashboard');
+                }
+              });
+          })
+          .catch(err => console.log(err));
+      });
     });
   }
 });
 
 // Join handle
 router.post('/joinroom', ensureAuthenticated, (req, res) => {
-  const { name, password } = req.body;
+  const { id, password } = req.body;
 
-  Room.findOne({ name: name }).then(room => {
+  Room.findById( id, (err,room) => {
     if (room) {
-
       users = room.users
 
       if (!users.includes(req.user.id)) {
@@ -131,7 +140,7 @@ router.post('/joinroom', ensureAuthenticated, (req, res) => {
           if (isMatch) {
 
             User.updateOne({ _id: req.user.id },
-              { $push: { rooms: name } }, function (err, docs) {
+              { $push: { rooms: id } }, function (err, docs) {
                 if (err) {
                   console.log(err)
                 }
@@ -140,8 +149,8 @@ router.post('/joinroom', ensureAuthenticated, (req, res) => {
                 }
               });
 
-            Room.updateOne({ name: name },
-              { $push:  {  users: {userId:req.user.id, name: req.user.name} }}, function (err, docs) {
+            Room.updateOne({ _id: id },
+              { $push:  {  users: req.user.id}}, function (err, docs) {
                 if (err) {
                   console.log(err)
                 }
@@ -151,10 +160,10 @@ router.post('/joinroom', ensureAuthenticated, (req, res) => {
               });
 
               newMessage = {  msg: `${req.user.name} joined`,
-                              userSent: {userId: 'bot', name: 'bot'},
+                              userSent: 'bot',
                               Date : new Date()
                             }
-              Room.updateOne({ name: name },
+              Room.updateOne({ _id: id },
                 {$push:  { messages: newMessage} 
                 }, function (err, docs) {
                   if (err) {
@@ -165,7 +174,7 @@ router.post('/joinroom', ensureAuthenticated, (req, res) => {
                   }
                 });
 
-            req.app.io.to(name).emit('user-joined' ,{userId: req.user.id,userName: req.user.name,Date:newMessage.Date, room: name} )
+            req.app.io.to(id).emit('user-joined' ,{userId: req.user.id,userName: req.user.name,Date:newMessage.Date, room: room.name, roomId:room.id} )
             res.redirect('/dashboard');
           }
           else {

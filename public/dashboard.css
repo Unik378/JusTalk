@@ -66,10 +66,10 @@ input::placeholder {
   display: none;
 }
 
-#roomName:hover {
+#roomNameContainer:hover {
   background-color: #dbdbdb;
   border: 1px solid #dbdbdb;
-  border-radius: 20px;
+  border-radius: 25px;
 }
 
 .list-group-flush > .list-group-item {

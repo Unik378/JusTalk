@@ -10,16 +10,13 @@ const RoomSchema = new mongoose.Schema({
     required: true
   },
   users: {
-    type: [{
-      name: String,
-      userId: String
-    }],
+    type: [String],
     default: []
   },
   messages: {
     type: [{
         msg: String,
-        userSent: {userId: String, name: String},
+        userSent: [String],
         Date : Date
     }],
     default: []

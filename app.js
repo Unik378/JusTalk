@@ -90,6 +90,29 @@ app.use('/profilePics/:id' , ensureAuthenticated, (req,res,next) => {
   }
 })
 
+// Room Profile Pics
+app.use('/roomProfilePics/:id' , ensureAuthenticated, (req,res,next) => {
+  filePath = path.join(__dirname,'roomProfilePics',req.params.id);
+
+  if( req.user.rooms.includes(req.params.id))
+  {
+    if(fs.existsSync(filePath))
+    {
+      res.sendFile(filePath);
+    }
+    else
+    {
+      res.sendFile(path.join(__dirname,'roomProfilePics','default.png'));
+    }
+  }
+  else
+  {
+    res.status(401);
+    res.send(`<h1>Not authorised to access this resource</h1>`);
+  }
+
+})
+
 
 // Routes
 app.use('/', require('./routes/index.js'));
@@ -111,17 +134,17 @@ io.on('connection', socket => {
 
     userToSend = {};
     data.rooms.forEach(room => {
-      socket.join(room.name);
+      socket.join(room.id);
       
       room.users.forEach( user => {
-        if( onlineUsers[user.userId] )
-          userToSend[user.userId] = 1;
+        if( onlineUsers[user] )
+          userToSend[user] = 1;
         else
-          userToSend[user.userId] = 0;
+          userToSend[user] = 0;
       })
 
       setTimeout(() => {
-        socket.broadcast.to(room.name).emit('online' , { userId: data.userId});
+        socket.broadcast.to(room.id).emit('online' , { userId: data.userId});
       }, 1500);
     });
 
@@ -131,8 +154,8 @@ io.on('connection', socket => {
 
   socket.on('leave-room' , data => {
 
-    Room.updateOne({ name: data.room },
-      { $pull: { users: { userId: data.id} } }, function (err, docs) {
+    Room.updateOne({ _id: data.room },
+      { $pull: { users: data.id } }, function (err, docs) {
         if (err) {
           console.log(err)
         }
@@ -142,11 +165,11 @@ io.on('connection', socket => {
     });
 
     newMessage = {  msg: `${data.name} left`,
-                    userSent: {userId: 'bot', name: 'bot'},
+                    userSent: 'bot',
                     Date : new Date()
                   }
     
-    Room.updateOne({ name: data.room },
+    Room.updateOne({ _id: data.room },
       {$push:  { messages: newMessage} 
       }, function (err, docs) {
         if (err) {
@@ -175,7 +198,7 @@ io.on('connection', socket => {
 
   socket.on('sent-message' , (data) => {
 
-    Room.updateOne({ name: data.room },
+    Room.updateOne({ _id: data.room },
       { $push: { messages: data.message } }, function (err, docs) {
         if (err) {
           console.log(err)

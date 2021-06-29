@@ -34,6 +34,14 @@
     }
 } %> 
 
+<% function shortenMessage(str){
+    if( str.length > 40 )
+        str = str.substring(0,40);
+
+    str = str+'....'
+    return str;
+} %> 
+
 <div class="container mt-5 px-4">
     <div class="row rounded-lg overflow-hidden shadow">
         <!-- Users box-->
@@ -70,8 +78,8 @@
                         <% rooms.forEach(room => { %>
                             <% messages = room.messages %> 
                                 <% lastMessage = messages.slice(-1)[0] %>
-                                <% if( lastMessage.userSent.userId != 'bot' ){ %> 
-                                    <div id="<%= room.name %>">
+                                <% if( lastMessage.userSent != 'bot' ){ %> 
+                                    <div id="<%= room.id %>">
                                         <a href="#" class="list-group-item list-group-item-action list-group-item-light rounded-0">
                                             <div class="media">
                                                 <div class="img-cropper-small">
@@ -81,13 +89,13 @@
                                                     <div class="d-flex align-items-center justify-content-between mb-1">
                                                         <h5 class="mb-0"><%=room.name%></h5><small class="small"><%= formatDate(lastMessage.Date,'roomlist') %> </small>
                                                     </div>
-                                                    <p class="text-muted mb-0 text-small"><%= lastMessage.userSent.name + ': ' + lastMessage.msg%> </p>
+                                                    <p class="text-muted mb-0 text-small"><%= shortenMessage(userInfo[lastMessage.userSent].name + ': ' + lastMessage.msg)%> </p>
                                                 </div>
                                             </div>
                                         </a>
                                     </div>
                                 <% }else{ %>
-                                    <div id="<%= room.name %>">
+                                    <div id="<%= room.id %>">
                                         <a href="#" class="list-group-item list-group-item-action list-group-item-light rounded-0">
                                             <div class="media">
                                                 <div class="img-cropper-small">
@@ -97,7 +105,7 @@
                                                     <div class="d-flex align-items-center justify-content-between mb-1">
                                                         <h5 class="mb-0"><%=room.name%></h5><small class="small"><%= formatDate(lastMessage.Date,'roomlist') %> </small>
                                                     </div>
-                                                    <p class="text-muted mb-0 text-small"><%=lastMessage.msg%> </p>
+                                                    <p class="text-muted mb-0 text-small"><%= shortenMessage(lastMessage.msg)%> </p>
                                                 </div>
                                             </div>
                                         </a>
@@ -112,29 +120,37 @@
         <!-- Chat Box-->
         <div style="padding-left: 4px;padding-right: 0px;" id="chatarea" class="col-7">
 
-            <div id="topBarChatBox" class="bg-gray px-4 py-2 bg-light" style="display: none; justify-content: space-between;">
+            <div id="topBarChatBox" class="bg-gray px-4 py-2 bg-light" style="display: none;">
                 <button style="width: 100%;border: none;background: #f8f9fa !important;" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
-                    <div id="roomName" class="h5 mb-0 py-1" ></div>
+                    <div style="display: flex;" id="roomNameContainer">
+                        <div class="img-cropper-small">
+                            <img src="/icon-avatar.png" alt="">
+                        </div>
+                        <div style="margin-left: 15px;">
+                            <div style="text-align: left;" id="roomName" class="h5 mb-0" ></div>
+                            <small><span></span> members | <span></span> online</small>
+                        </div>
+                    </div>
                 </button>
             </div>
 
             <% rooms.forEach( room => { %>
-                <div style="display: none;" id="<%= room.name %>ChatBox"  class="px-4 py-5 chat-box bg-white">
+                <div style="display: none;" id="<%= room.id %>ChatBox"  class="px-4 py-4 chat-box bg-white">
                     <% messages = room.messages %> 
                     <% messages.forEach(message => { %>
-                        <% if( message.userSent.userId == 'bot'){ %> 
+                        <% if( message.userSent == 'bot'){ %> 
                             <div class="botMsgContainer">
                                 <p class="botMsg"><%= message.msg %></p>
                             </div>
-                        <% }else if( message.userSent.userId == user.id ) {%>
+                        <% }else if( message.userSent == user.id ) {%>
                             <div class="media w-50 ml-auto mb-3"><div class="media-body"><div class="bg-primary rounded py-2 px-3 mb-2"><p class="text-small mb-0 text-white"><%= message.msg %> </p></div><p class="small text-muted"><%= formatDate(message.Date) %></p></div></div>
                         <% }else{ %>
                             <div class="media w-50 mb-3">
                                 <div class="img-cropper-small">
-                                    <img src="/profilePics/<%=message.userSent.userId%>">
+                                    <img src="/profilePics/<%=message.userSent%>">
                                 </div>
                                 <div class="media-body ml-3">
-                                    <p style="margin-bottom: 0;color: #3a6d99;"><%=message.userSent.name%></p>
+                                    <p style="margin-bottom: 0;color: #3a6d99;"><%=userInfo[message.userSent].name%></p>
                                     <div class="bg-light rounded py-2 px-3 mb-2">
                                         <p class="text-small mb-0 text-muted"><%=message.msg%></p>
                                     </div>
@@ -250,7 +266,7 @@
 
 <% var roomInfo = []%>
 <% rooms.forEach( room => { %>
-      <% roomInfo.push({ name: room.name, users: room.users, }); %>
+      <% roomInfo.push({id:room.id, name: room.name, users: room.users }); %>
 <% }) %>
 
 
@@ -260,7 +276,7 @@
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
-    localStorage.setItem("user", '<%-JSON.stringify({name:user.name, email:user.email, id:user.id,rooms:roomInfo})%>')
+    localStorage.setItem("user", '<%-JSON.stringify({name:user.name, email:user.email, id:user.id,rooms:roomInfo,userInfo:userInfo})%>')
     user = JSON.parse(localStorage.getItem("user"));
     topBarChatBox = document.getElementById('topBarChatBox');
     typingArea = document.getElementById('typingArea');
@@ -332,6 +348,16 @@
 </script>
 
 <script>
+function shortenMessage(str){
+    if( str.length > 40 )
+        str = str.substring(0,40);
+
+    str = str+'....'
+    return str;
+}
+</script>
+
+<script>
     function formatDate(d,position='message'){
 
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun","Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -371,7 +397,7 @@
 
     socket.on('online-users', data => {
         onlineUsers = data.onlineUsers;
-        console.log('In socket ',onlineUsers)
+        // console.log('In socket ',onlineUsers)
     });
 
     socket.on('online' , data => {
@@ -383,6 +409,19 @@
         {
             elem.getElementsByTagName('i')[0].style.color = 'green';
         }
+
+        if(currentRoom != null)
+        {
+            roomIndex = user.rooms.findIndex(x => x.id == currentRoom);
+            userIndex = user.rooms[roomIndex].users.findIndex( x => x == data.userId);
+
+            if(userIndex > -1)
+            {
+                spans = document.getElementById('roomNameContainer').getElementsByTagName('span');
+                spans[1].innerText = String(parseInt(spans[1].innerText)+1);
+            }
+        }
+            
     })
 
     socket.on('offline' , id => {
@@ -395,21 +434,33 @@
             {
                 elem.getElementsByTagName('i')[0].style.color = 'red';
             }
+            if(currentRoom != null)
+            {
+                roomIndex = user.rooms.findIndex(x => x.id == currentRoom);
+                userIndex = user.rooms[roomIndex].users.findIndex( x => x == id);
+
+                if(userIndex > -1)
+                {
+                    spans = document.getElementById('roomNameContainer').getElementsByTagName('span');
+                    spans[1].innerText = String(parseInt(spans[1].innerText)-1);
+                }
+            }
         }
     })
 
     socket.on('user-joined' , (data) => {
-        document.getElementById(data.room+'ChatBox').innerHTML += `<div class="botMsgContainer"><p class="botMsg">${data.userName} joined</p></div>`;
+        document.getElementById(data.roomId+'ChatBox').innerHTML += `<div class="botMsgContainer"><p class="botMsg">${data.userName} joined</p></div>`;
 
-        document.getElementById(currentRoom).getElementsByTagName('p')[0].innerText = `${data.userName} joined`;
+        displayMessage = shortenMessage(`${data.userName} joined`);
+        document.getElementById(data.roomId).getElementsByTagName('p')[0].innerText = displayMessage;
         displayDate = formatDate(new Date(data.Date),'roomlist');
-        document.getElementById(currentRoom).getElementsByTagName('small')[0].innerText = `${displayDate}`;
+        document.getElementById(data.roomId).getElementsByTagName('small')[0].innerText = displayDate;
 
         onlineUsers[data.userId] = 1;
 
-        user.rooms[user.rooms.findIndex(x => x.name == data.room)].users.push({userId:data.userId,name:data.userName});
+        user.rooms[user.rooms.findIndex(x => x.id == data.roomId)].users.push(data.userId);
         
-        if( currentRoom == data.room )
+        if( currentRoom == data.roomId )
         {
             document.getElementById('myUL').innerHTML +=  `<li id="${data.userId}" class="list-group-item">
                                                             <div class="img-cropper-small">
@@ -418,9 +469,13 @@
                                                             <i style="position: absolute;left: 52px;top: 43px;color: green;"class="fa fa-circle" aria-hidden="true"></i>
                                                             ${data.userName}
                                                             </li>`;
+
+            spans = document.getElementById('roomNameContainer').getElementsByTagName('span');
+            spans[0].innerText = String(parseInt(spans[0].innerText)+1);
+            spans[1].innerText = String(parseInt(spans[1].innerText)+1);
         }
 
-        console.log(`${data.userName} joined ${data.room}`);
+        console.log(`${data.userName} joined ${data.roomId}`);
     })
 
     typingArea.addEventListener('submit', (e) => {
@@ -432,10 +487,7 @@
 
         const message = {
             msg: msg,
-            userSent :{
-                userId : user.id,
-                name: user.name
-            },
+            userSent :user.id,
             Date: new Date()
         }
 
@@ -448,8 +500,9 @@
         chatBox = document.getElementById(currentRoom+'ChatBox');
         chatBox.innerHTML += `<div class="media w-50 ml-auto mb-3"><div class="media-body"><div class="bg-primary rounded py-2 px-3 mb-2"><p class="text-small mb-0 text-white">${message.msg}</p></div><p class="small text-muted">${displayDate}</p></div></div>`;
         
-        document.getElementById(currentRoom).getElementsByTagName('p')[0].innerText = `${user.name}: ${msg}`;
-        document.getElementById(currentRoom).getElementsByTagName('small')[0].innerText = `${displayDateRoomList}`;
+        displayMessage = shortenMessage(`${user.name}: ${msg}`);
+        document.getElementById(currentRoom).getElementsByTagName('p')[0].innerText = displayMessage;
+        document.getElementById(currentRoom).getElementsByTagName('small')[0].innerText = displayDateRoomList;
 
         firstChild = document.getElementById(currentRoom).parentElement.childNodes[0];
         document.getElementById(currentRoom).parentElement.insertBefore(document.getElementById(currentRoom),firstChild);
@@ -468,13 +521,14 @@
 
         displayDate = formatDate(new Date(data.message.Date));
         displayDateRoomList = formatDate(new Date(data.message.Date),'roomlist')
+        displayMessage = shortenMessage(`${user.userInfo[data.message.userSent].name}: ${data.message.msg}`);
 
         chatBox.innerHTML +=`<div class="media w-50 mb-3">
                                 <div class="img-cropper-small">
-                                    <img src="/profilePics/${data.message.userSent.userId}" alt="user">
+                                    <img src="/profilePics/${data.message.userSent}" alt="user">
                                 </div>
                                 <div class="media-body ml-3">
-                                    <p style="margin-bottom: 0;color: #3a6d99;">${data.message.userSent.name}</p>
+                                    <p style="margin-bottom: 0;color: #3a6d99;">${user.userInfo[data.message.userSent].name}</p>
                                     <div class="bg-light rounded py-2 px-3 mb-2">
                                         <p class="text-small mb-0 text-muted">${data.message.msg}</p>
                                     </div>
@@ -482,8 +536,8 @@
                                 </div>
                             </div>`;
 
-        document.getElementById(data.room).getElementsByTagName('p')[0].innerText = `${data.message.userSent.name}: ${data.message.msg}`;
-        document.getElementById(data.room).getElementsByTagName('small')[0].innerText = `${displayDateRoomList}`;
+        document.getElementById(data.room).getElementsByTagName('p')[0].innerText = displayMessage;
+        document.getElementById(data.room).getElementsByTagName('small')[0].innerText = displayDateRoomList;
 
         firstChild = document.getElementById(data.room).parentElement.childNodes[0];
         document.getElementById(data.room).parentElement.insertBefore(document.getElementById(data.room),firstChild);
@@ -498,7 +552,7 @@
     document.getElementById('leaveroom').addEventListener('click' , (e) => {
         e.preventDefault();
 
-        user.rooms.splice(user.rooms.findIndex( x => x.name == currentRoom ),1);
+        user.rooms.splice(user.rooms.findIndex( x => x.id == currentRoom ),1);
         if(user.rooms.length == 0 )
             document.getElementById('noRoomMessage').style.display = 'block';
 
@@ -518,12 +572,13 @@
         console.log('user left ', data);
         document.getElementById(data.room+'ChatBox').innerHTML += `<div class="botMsgContainer"><p class="botMsg">${data.name} left</p></div>`;
 
-        document.getElementById(currentRoom).getElementsByTagName('p')[0].innerText = `${data.name} left`;
+        displayMessage = shortenMessage(`${data.name} left`);
+        document.getElementById(currentRoom).getElementsByTagName('p')[0].innerText = displayMessage;
         displayDate = formatDate(new Date(data.Date),'roomlist');
         document.getElementById(currentRoom).getElementsByTagName('small')[0].innerText = `${displayDate}`;
 
-        roomIndex = user.rooms.findIndex(x => x.name == data.room);
-        userIndex = user.rooms[roomIndex].users.findIndex( x => x.userId == data.id);
+        roomIndex = user.rooms.findIndex(x => x.id == data.room);
+        userIndex = user.rooms[roomIndex].users.findIndex( x => x == data.id);
         user.rooms[roomIndex].users.splice(userIndex,1);
 
 
@@ -534,6 +589,10 @@
             {
                 elem.remove();
             }
+
+            spans = document.getElementById('roomNameContainer').getElementsByTagName('span');
+            spans[0].innerText = String(parseInt(spans[0].innerText)-1);
+            spans[1].innerText = String(parseInt(spans[1].innerText)-1);
         }
     })
 
@@ -549,10 +608,10 @@
 
     user.rooms.forEach(room => {
 
-        document.getElementById(room.name).addEventListener('mousedown', (e) => {
+        document.getElementById(room.id).addEventListener('mousedown', (e) => {
             e.preventDefault();
 
-            currentRoom = document.getElementById(room.name).id;
+            currentRoom = room.id;
             console.log(currentRoom)
             topBarChatBox.style.display = 'flex';
             typingArea.style.display = 'block';
@@ -561,51 +620,56 @@
             
 
             user.rooms.forEach(room1 => {
-                document.getElementById(room1.name+'ChatBox').style.display = 'none'
-                document.getElementById(room1.name).getElementsByTagName('a')[0].classList.remove('active');
-                document.getElementById(room1.name).getElementsByTagName('a')[0].classList.remove('text-white');
-                document.getElementById(room1.name).getElementsByTagName('a')[0].classList.add('list-group-item-light');
+                document.getElementById(room1.id+'ChatBox').style.display = 'none'
+                document.getElementById(room1.id).getElementsByTagName('a')[0].classList.remove('active');
+                document.getElementById(room1.id).getElementsByTagName('a')[0].classList.remove('text-white');
+                document.getElementById(room1.id).getElementsByTagName('a')[0].classList.add('list-group-item-light');
 
-                document.getElementById(room1.name).getElementsByTagName('p')[0].classList.add('text-muted');
+                document.getElementById(room1.id).getElementsByTagName('p')[0].classList.add('text-muted');
             });
 
-            document.getElementById(room.name+'ChatBox').style.display = 'block'
-            scrollToBottom(document.getElementById(room.name+'ChatBox'))
+            document.getElementById(room.id+'ChatBox').style.display = 'block'
+            scrollToBottom(document.getElementById(room.id+'ChatBox'))
             roomName.innerText =  room.name;
 
-            document.getElementById(room.name).getElementsByTagName('a')[0].classList.add('active');
-            document.getElementById(room.name).getElementsByTagName('a')[0].classList.add('text-white');
-            document.getElementById(room.name).getElementsByTagName('a')[0].classList.remove('list-group-item-light');
+            document.getElementById(room.id).getElementsByTagName('a')[0].classList.add('active');
+            document.getElementById(room.id).getElementsByTagName('a')[0].classList.add('text-white');
+            document.getElementById(room.id).getElementsByTagName('a')[0].classList.remove('list-group-item-light');
 
-            document.getElementById(room.name).getElementsByTagName('p')[0].classList.remove('text-muted');
+            document.getElementById(room.id).getElementsByTagName('p')[0].classList.remove('text-muted');
 
             roomDescription.getElementsByTagName('h5')[0].innerText = room.name;
             myUL = document.getElementById('myUL');
             myUL.innerHTML = '';
 
             console.log(onlineUsers);
+            count = 0;
             room.users.forEach( member => {
-                if( onlineUsers[member.userId])
+                if( onlineUsers[member])
                 {
-                    myUL.innerHTML +=  `<li id="${member.userId}" class="list-group-item">
+                    count = count+1;
+                    myUL.innerHTML +=  `<li id="${member}" class="list-group-item">
                                         <div class="img-cropper-small">
-                                            <img src="/profilePics/${member.userId}" alt="user">
+                                            <img src="/profilePics/${member}" alt="user">
                                         </div>
                                         <i style="position: absolute;left: 52px;top: 43px;color: green;"class="fa fa-circle" aria-hidden="true"></i>
-                                        ${member.name}
+                                        ${user.userInfo[member].name}
                                     </li>`;
                 }
                 else
                 {
-                    myUL.innerHTML +=  `<li id="${member.userId}" class="list-group-item">
+                    myUL.innerHTML +=  `<li id="${member}" class="list-group-item">
                                         <div class="img-cropper-small">
-                                            <img src="/profilePics/${member.userId}" alt="user">
+                                            <img src="/profilePics/${member}" alt="user">
                                         </div>
                                         <i style="position: absolute;left: 52px;top: 43px;color: red;"class="fa fa-circle" aria-hidden="true"></i>
-                                        ${member.name}
+                                        ${user.userInfo[member].name}
                                     </li>`;
                 }
             })
+
+            document.getElementById('roomNameContainer').getElementsByTagName('span')[0].innerText = room.users.length;
+            document.getElementById('roomNameContainer').getElementsByTagName('span')[1].innerText = count;
         })
     });
 </script>

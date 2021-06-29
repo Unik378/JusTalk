@@ -11,13 +11,13 @@
       <%- include ("./partials/messages"); %>
       <form action="/joinroom" method="POST">
         <div class="form-group">
-          <label for="name">Room Name</label>
+          <label for="id">Room Id</label>
           <input
             type="text"
-            id="name"
-            name="name"
+            id="id"
+            name="id"
             class="form-control"
-            placeholder="Enter room name"
+            placeholder="Enter room id"
           />
         </div>
         <div class="form-group">
@@ -35,6 +35,7 @@
       <p class="lead mt-4">
         Create Room? <a href="/createroom">Create</a>
       </p>
+      <p class="lead">Back to Dashboard? <a href="/Dashboard">Dashboard</a></p>
     </div>
   </div>
 </div>

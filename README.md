@@ -24,7 +24,7 @@ npm run dev
 ```
 
 ## Deployed at
-[justalkme.herokuapp.com](justalkme.herokuapp.com)
+[justalkme.herokuapp.com](http://justalkme.herokuapp.com)
 
 ### Some Screenshots
 

@@ -23,6 +23,9 @@ npm run dev
 # Visit http://localhost:5000
 ```
 
+## Deployed at
+[justalkme.herokuapp.com](justalkme.herokuapp.com)
+
 ### Some Screenshots
 
 Logging in with email password and creating room
